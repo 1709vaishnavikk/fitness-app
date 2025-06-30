@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: activityService
+
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  profiles:
+    active: default

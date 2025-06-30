@@ -1,0 +1,202 @@
+version: '3.8'
+
+services:
+  configserver:
+    image: vaishnavi179/configserver:f1
+    container_name: configserver
+    ports:
+      - "8888:8888"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fitness-net
+
+
+  eurekaserver:
+    image: vaishnavi179/eurekaserver:f1
+    container_name: eurekaserver
+    ports:
+      - "8761:8761"
+    depends_on:
+      configserver:
+        condition: service_healthy
+
+    networks:
+      - fitness-net
+
+  userservice:
+    image: vaishnavi179/userservice:f1
+    container_name: userservice
+    ports:
+      - "8081:8081"
+    depends_on:
+      eurekaserver:
+        condition: service_started
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fitness_user_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: vaishnavi@17
+    networks:
+      - fitness-net
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: fitness_user_db         # <– the database that will be auto-created
+      POSTGRES_USER: postgres              # <– you define this username
+      POSTGRES_PASSWORD: vaishnavi@17      # <– and this password
+    ports:
+      - "5432:5432"
+    networks:
+      - fitness-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.5
+    container_name: keycloak
+    command: start-dev --import-realm --realm-file=/opt/keycloak/data/import/fitness-oauth2-realm.json
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./keycloak-realm/data:/opt/keycloak/data/import
+      - ./themes:/opt/keycloak/themes
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_ENABLED=true
+      - KC_HOSTNAME=localhost
+      - KC_HOSTNAME_STRICT=false
+    depends_on:
+      - postgres
+    networks:
+      - fitness-net
+
+#  keycloak-proxy:
+#    image: nginx:alpine
+#    container_name: keycloak-proxy
+#    ports:
+#      - "8080:80"  # 🔥 NGINX will now expose localhost:8080
+#    volumes:
+#      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
+#    depends_on:
+#      - keycloak
+#      - gateway
+#    networks:
+#      - fitness-net
+
+
+
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - fitness-net
+  
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # RabbitMQ messaging port
+      - "15672:15672" # RabbitMQ Management UI
+    networks:
+      - fitness-net
+
+
+  activityservice:
+    image: vaishnavi179/activityservice:f1
+    container_name: activityservice
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/fitnessactivity
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_started
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - fitness-net
+
+  aiservice:
+    image: vaishnavi179/aiservice:f1
+    container_name: aiservice
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/fitness-recommendations
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_started
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - fitness-net
+
+  gateway:
+    image: vaishnavi179/gateway:f1
+    container_name: gateway
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka/
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    networks:
+      - fitness-net
+
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: frontend
+    ports:
+      - "5173:80"  # 80 is NGINX default port inside container, 5173 is browser port
+    networks:
+      - fitness-net
+    depends_on:
+      - gateway
+      - keycloak
+
+
+
+
+
+networks:
+  fitness-net:
+    driver: bridge

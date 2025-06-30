@@ -1,0 +1,10 @@
+target/
+*.iml
+*.log
+*.md
+.idea/
+.mvn/
+mvnw
+mvnw.cmd
+Dockerfile
+docker-compose.yml

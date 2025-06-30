@@ -1,0 +1,15 @@
+# Java
+/target
+*.class
+*.jar
+*.war
+*.log
+
+# Node/React
+frontend/react-app/node_modules/
+frontend/react-app/build/
+frontend/react-app/.env
+
+# OS
+.DS_Store
+Thumbs.db

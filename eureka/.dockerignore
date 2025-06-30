@@ -1,0 +1,8 @@
+# Ignore unnecessary build and IDE files
+target/
+.idea/
+*.iml
+*.log
+*.md
+.git/
+*.DS_Store
