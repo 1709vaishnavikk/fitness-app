@@ -7,7 +7,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://mongodb:27017/fitnessactivity
+      uri: mongodb://localhost:27017/fitnessactivity
       database: fitnessactivity
     rabbitmq:
       host: rabbitmq
