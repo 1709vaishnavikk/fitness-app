@@ -5,7 +5,7 @@ spring:
   application:
     name: userService
   datasource:
-    url: jdbc:postgresql://postgres:5432/fitness_user_db
+    url: jdbc:postgresql://localhost:5432/fitness_user_db
     username: postgres
     password: vaishnavi@17
 
@@ -13,7 +13,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/realms/fitness-oauth2
+          issuer-uri: http://localhost:8080/realms/fitness-oauth2
 
   jpa:
     hibernate:
