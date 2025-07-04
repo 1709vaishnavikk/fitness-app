@@ -4,7 +4,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://mongodb:27017/fitness-recommendations
+      uri: mongodb://localhost:27017/fitness-recommendations
       database: fitness-recommendations
 
     rabbitmq:
@@ -19,7 +19,7 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://eurekaserver:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
 
 rabbitmq:
   exchange:
