@@ -82,7 +82,7 @@ Each service includes a Dockerfile. You can use `docker-compose` to spin up all 
 docker-compose up --build
 ```
 
-> ⚠️ Localhost setup is the most stable. Docker support is provided for containerization and future deployment.
+>  Localhost setup is the stable.
 
 ---
 
